@@ -1,0 +1,49 @@
+[package]
+name = "mcpg-plugin-backend-email"
+version = "0.1.0-alpha.15"
+license = "Apache-2.0"
+edition = "2024"
+description = """
+Email backend binding plugin for mcpg. Sends mail over SMTP (lettre) and reads
+a mailbox over IMAP (async-imap) as MCP tools/resources — over rustls TLS
+(STARTTLS / implicit) or plaintext. The message is built from / projected to
+the tool arguments. Complements the messaging backends.
+"""
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+cdylib-export = []
+static-firstparty = []
+# Gates the docker-backed GreenMail integration suite so plain `cargo test`
+# stays cheap. Run: `cargo test -p mcpg-plugin-backend-email --features integration-tests`.
+integration-tests = []
+
+[dependencies]
+mcpg-plugin-protocol = { git = "https://github.com/mcpg-dev/mcpg-plugin-protocol", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13" }
+mcpg-plugin-sdk      = { git = "https://github.com/mcpg-dev/mcpg-plugin-sdk", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13", features = ["static-firstparty"] }
+mcpg-plugin-host     = { git = "https://github.com/mcpg-dev/mcpg-plugin-host", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13" }
+async-trait    = "0.1"
+base64         = "0.22"
+chrono         = { version = "0.4", features = ["clock"] }
+# SMTP. rustls over tokio (NOT native-tls — deny.toml bans openssl/native-tls).
+lettre         = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "pool", "tokio1-rustls-tls", "ring"] }
+# IMAP (tokio runtime). TLS is wrapped by us via tokio-rustls.
+async-imap     = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
+futures-util   = "0.3"
+metrics        = "0.24"
+serde          = { version = "1", features = ["derive"] }
+serde_json     = "1"
+tokio          = { version = "1", features = ["sync", "rt", "rt-multi-thread", "macros", "time", "net", "io-util"] }
+tokio-rustls   = "0.26"
+webpki-roots   = "1"
+tracing        = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "net", "time"] }
+async-trait = "0.1"
+# Docker-backed GreenMail integration test (async runner). Dev-dep only.
+testcontainers = "0.27"
+

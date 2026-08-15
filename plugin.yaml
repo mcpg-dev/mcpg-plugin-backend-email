@@ -1,0 +1,16 @@
+schema: mcpg.dev/plugin/v1
+id: dev.mcpg.backend.email
+name: Email Binding
+license: Apache-2.0
+description: |
+  Sends mail over SMTP (lettre) and reads a mailbox over IMAP (async-imap) as
+  MCP tools and resources. `op: send` builds a message from the call arguments
+  (`to` / `subject` / `body`) and delivers it; `op: read` fetches the most
+  recent messages from a mailbox (envelope + text body, read non-destructively
+  via BODY.PEEK). TLS is rustls (STARTTLS / implicit) or plaintext; the login
+  password resolves through the gateway secret-resolver (`${env.X}` /
+  `vault://...`).
+class: backend
+runtime: native-cdylib-v1
+protocol_version: "1.0"
+required_capabilities: [network_outbound]
