@@ -107,5 +107,11 @@ mcpg_plugin_sdk::declare_plugin! {
             factory: |cfg, host: ::mcpg_plugin_sdk::HostHandle|
                 EmailBackendCdylib::from_host_config(cfg, host),
         },
+        watch_strategy as watch {
+            inner_name: "watch",
+            plugin_type: crate::watch::EmailWatchCdylib,
+            factory: |cfg, host: ::mcpg_plugin_sdk::HostHandle|
+                crate::watch::EmailWatchCdylib::from_host_config(cfg, host),
+        },
     ],
 }

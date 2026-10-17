@@ -1,13 +1,14 @@
 [package]
 name = "mcpg-plugin-backend-email"
-version = "0.1.0-alpha.42"
+version = "0.1.0-alpha.43"
 license = "Apache-2.0"
 edition = "2024"
 description = """
 Email backend binding plugin for mcpg. Sends mail over SMTP (lettre) and reads
 a mailbox over IMAP (async-imap) as MCP tools/resources — over rustls TLS
 (STARTTLS / implicit) or plaintext. The message is built from / projected to
-the tool arguments. Complements the messaging backends.
+the tool arguments. Watches a mailbox too: each message that arrives, changes
+flags or is expunged as an MCP Event. Complements the messaging backends.
 """
 
 [lib]
@@ -22,9 +23,9 @@ static-firstparty = []
 integration-tests = []
 
 [dependencies]
-mcpg-plugin-protocol = { git = "https://github.com/mcpg-dev/mcpg-plugin-protocol", tag = "v0.1.0-beta.39", version = "=0.1.0-beta.39" }
-mcpg-plugin-sdk      = { git = "https://github.com/mcpg-dev/mcpg-plugin-sdk", tag = "v0.1.0-beta.40", version = "=0.1.0-beta.40", features = ["static-firstparty"] }
-mcpg-plugin-host     = { git = "https://github.com/mcpg-dev/mcpg-plugin-host", tag = "v0.1.0-beta.41", version = "=0.1.0-beta.41" }
+mcpg-plugin-protocol = { git = "https://github.com/mcpg-dev/mcpg-plugin-protocol", tag = "v0.1.0-beta.40", version = "=0.1.0-beta.40" }
+mcpg-plugin-sdk      = { git = "https://github.com/mcpg-dev/mcpg-plugin-sdk", tag = "v0.1.0-beta.41", version = "=0.1.0-beta.41", features = ["static-firstparty"] }
+mcpg-plugin-host     = { git = "https://github.com/mcpg-dev/mcpg-plugin-host", tag = "v0.1.0-beta.42", version = "=0.1.0-beta.42" }
 async-trait    = "0.1"
 base64         = "0.23"
 chrono         = { version = "0.4", features = ["clock"] }
@@ -47,3 +48,5 @@ async-trait = "0.1"
 # Docker-backed GreenMail integration test (async runner). Dev-dep only.
 testcontainers = "0.27"
 
+# The watch's warnings in a failing run.
+tracing-subscriber = "0.3"

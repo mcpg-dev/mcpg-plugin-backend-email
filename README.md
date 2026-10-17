@@ -110,14 +110,73 @@ mcp:
   `tokio-rustls` + `webpki-roots`). native-tls is banned. IMAP certificates
   are validated against the system roots.
 
+## Mailbox watch (`imap_mailbox`)
+
+A second entity, a `watch_strategy` of kind `imap_mailbox`, watches a
+mailbox as an inventory of messages and reports each change as the shared
+`object.changed` event:
+
+- a message that arrives is `created`;
+- a flag change (`\Seen`, `\Flagged`, `\Answered`, `\Draft`, `\Deleted`, a
+  keyword) is `modified`;
+- an expunged message is `deleted`.
+
+The watch lists UIDs, flags, sizes and dates every `interval_ms` on a
+read-only session (`EXAMINE`), and IDLE on a second session, when the
+server offers it, makes it list at once. Only a message that changed is
+fetched in full: its event carries `uid`, `flags`, `from`, `to`, `cc`,
+`subject`, `date`, `messageId`, `inReplyTo` and a `preview` of its text. A
+restart reports exactly what changed while the watch was stopped while the
+listing fits `snapshot_bytes` (about 2 900 messages); past that it records a
+gap and starts from the mailbox it finds.
+
+```yaml
+mcp:
+  capabilities:
+    events:
+      - name: support.mail
+        description: A message arrived in, or changed in, the support mailbox.
+        source:
+          watch:
+            strategy:
+              type: plugin
+              kind: imap_mailbox
+              host: imap.example.com
+              username: support@example.com
+              password: "${env.SUPPORT_IMAP_PASSWORD}"
+            event_type: object.changed
+        match: event.data.op == 'created'
+```
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `host`, `username`, `password` | string (required) | — | The password resolves before the watch starts; `cred://` is rejected. |
+| `port` | int | `993` | |
+| `tls` | `implicit` \| `none` | `implicit` | IMAPS, or plaintext on a trusted network. |
+| `mailbox` | string | `INBOX` | |
+| `idle` | bool | `true` | IDLE for prompt changes, when the server offers it. |
+| `interval_ms` | int | `60000` | Listing cadence, at least 250. |
+| `timeout_ms` | int | `30000` | Budget of one listing, and of the fetch of what changed. |
+| `preview_bytes` | int | `2048` | The start of the text an event carries (at most 32768). A message over 256 KiB gets no preview. |
+| `max_files` | int | `10000` | Most messages watched: the newest (at most 100000). |
+| `start_at` | `now` \| `existing` | `now` | `existing` reports the messages there at a first start as created. |
+| `snapshot_bytes`, `max_in_flight`, `ack_timeout_ms` | int | `131072`, `256`, `60000` | As for every inventory source. |
+
+The key is `{uidvalidity}:{uid}`, so a mailbox the server recreates (a new
+UIDVALIDITY) reports its old messages deleted and its messages created.
+
 ## Build / test
 
 ```bash
-nx build mcpg-plugin-backend-email
-nx test  mcpg-plugin-backend-email                                   # unit tests
-cargo test -p mcpg-plugin-backend-email --features integration-tests  # GreenMail (docker)
-nx lint  mcpg-plugin-backend-email
+cargo build  -p mcpg-plugin-backend-email
+cargo test   -p mcpg-plugin-backend-email                              # unit tests
+cargo test   -p mcpg-plugin-backend-email --features integration-tests # GreenMail (docker)
+cargo clippy -p mcpg-plugin-backend-email --all-targets -- -D warnings
 ```
+
+The integration suites run send → read, and an `imap_mailbox` watch through
+a message there at a first start, a new message, a flag change, a delete and
+expunge, an exact restart, and a listing IDLE wakes.
 
 ## Scope / deferred
 

@@ -10,7 +10,43 @@ description: |
   via BODY.PEEK). TLS is rustls (STARTTLS / implicit) or plaintext; the login
   password resolves through the gateway secret-resolver (`${env.X}` /
   `vault://...`).
+
+  A `watch_strategy` (kind `imap_mailbox`) watches a mailbox as an inventory
+  of messages: each message that arrives is `created`, a flag change is
+  `modified`, an expunged message is `deleted`, as the shared
+  `object.changed` event with the envelope, flags and the start of the text.
+  It lists on a read-only session, IDLE makes it list at once, and it resumes
+  exactly after a restart.
 class: backend
 runtime: native-cdylib-v1
 protocol_version: "1.0"
 required_capabilities: [network_outbound]
+# MCP Events: the mailbox as an inventory of messages.
+watch_strategies:
+  - kind: imap_mailbox
+    placement: single_owner
+    resume: true
+    event_types:
+      - name: object.changed
+        description: A message arrived in, changed flags in, or left the watched mailbox.
+        payload_schema:
+          type: object
+          required: [op, store, location, key]
+          properties:
+            op: { enum: [created, modified, deleted] }
+            store: { type: string, description: The kind of store - imap here. }
+            location: { type: string, description: "imap://host:port/mailbox, without credentials." }
+            key: { type: string, description: "{uidvalidity}:{uid}, the UID zero-padded." }
+            size: { type: integer, description: RFC822.SIZE. }
+            modifiedAt: { type: string, description: The INTERNALDATE, RFC 3339. }
+            version: { type: string, description: The flags, space-separated. }
+            uid: { type: integer }
+            flags: { type: array, items: { type: string } }
+            from: { type: array, items: { type: string } }
+            to: { type: array, items: { type: string } }
+            cc: { type: array, items: { type: string } }
+            subject: { type: string }
+            date: { type: string, description: The Date header. }
+            messageId: { type: string }
+            inReplyTo: { type: string }
+            preview: { type: string, description: The start of the text, up to preview_bytes; absent for a message over 256 KiB. }

@@ -76,7 +76,7 @@ pub async fn send(
 /// Debug + Send`, which rules out boxing, so the two transports are unified
 /// through this enum (delegating the tokio io traits).
 #[derive(Debug)]
-enum ImapStream {
+pub(crate) enum ImapStream {
     Plain(TcpStream),
     Tls(Box<tokio_rustls::client::TlsStream<TcpStream>>),
 }
@@ -135,7 +135,11 @@ fn tls_connector() -> Result<tokio_rustls::TlsConnector, String> {
     Ok(tokio_rustls::TlsConnector::from(Arc::new(config)))
 }
 
-async fn connect_imap(host: &str, port: u16, tls: TlsMode) -> Result<ImapStream, String> {
+pub(crate) async fn connect_imap(
+    host: &str,
+    port: u16,
+    tls: TlsMode,
+) -> Result<ImapStream, String> {
     let tcp = TcpStream::connect((host, port)).await.map_err(|e| {
         mcpg_plugin_protocol::redact::redact_in_text(&format!("IMAP connect failed: {e}"))
     })?;
@@ -217,7 +221,7 @@ fn fetch_to_json(fetch: &async_imap::types::Fetch) -> Value {
     })
 }
 
-fn addresses_to_json(addrs: &[Address<'_>]) -> Vec<String> {
+pub(crate) fn addresses_to_json(addrs: &[Address<'_>]) -> Vec<String> {
     addrs.iter().map(address_to_string).collect()
 }
 
@@ -235,7 +239,7 @@ fn address_to_string(a: &Address<'_>) -> String {
     }
 }
 
-fn bytes_lossy(b: &[u8]) -> String {
+pub(crate) fn bytes_lossy(b: &[u8]) -> String {
     String::from_utf8_lossy(b).into_owned()
 }
 

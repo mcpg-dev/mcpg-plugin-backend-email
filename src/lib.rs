@@ -27,6 +27,9 @@ pub mod cdylib;
 mod email;
 mod envelope;
 mod types;
+/// The `imap_mailbox` watch strategy: each message that arrives in, changes
+/// flags in, or leaves a mailbox as an MCP Event.
+pub mod watch;
 
 use envelope::{build_result_envelope, classify_error};
 pub use types::{EmailBackendSpec, EmailOp, TlsMode};
